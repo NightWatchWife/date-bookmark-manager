@@ -15,6 +15,7 @@ node_modules/
 # Chrome Extension
 *.crx
 *.pem
+*.zip
 
 # Environment variables
 .env
