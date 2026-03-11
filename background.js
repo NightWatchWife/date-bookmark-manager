@@ -208,11 +208,13 @@ function searchAndOrganizeFolders(node, monthPattern, monthFolderName, parentNod
     // 日付フォルダが見つかった場合、月フォルダへ集約
     if (targetFolders.length > 0) {
         if (!monthFolderNode) {
-            // 月フォルダが存在しない場合は新規作成（常に上位に表示されるよう index: 0 指定）
+            // 月フォルダが存在しない場合は新規作成
+            // もともと最初の日付フォルダがあった位置に作成し、時系列（現在の月フォルダの直上など）を保つ
+            const insertIndex = targetFolders[0].index;
             chrome.bookmarks.create({
                 parentId: node.id,
                 title: monthFolderName,
-                index: 0
+                index: insertIndex
             }, (newFolder) => {
                 if (chrome.runtime.lastError) {
                     console.error("月フォルダの作成に失敗しました:", chrome.runtime.lastError.message);
