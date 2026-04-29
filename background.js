@@ -82,10 +82,10 @@ chrome.runtime.onInstalled.addListener(() => {
             contexts: ["page", "link"]
         });
 
-        // インストール時に過去のフォルダ整理を実行し、当日のフォルダを準備
-        organizePreviousMonthFoldersWithCheck(items.dateFormat, () => {
-            createTodayFolderIfNotExists(items.dateFormat);
-        });
+        // インストール時に過去のフォルダ整理のみ実行する。
+        // 当日のフォルダはユーザーが実際にブックマークを保存したタイミングで作るため、
+        // ここで空のフォルダを先行作成しない。
+        organizePreviousMonthFoldersWithCheck(items.dateFormat);
     });
 });
 
@@ -322,25 +322,3 @@ function moveFolders(folders, targetParentId, callback) {
     });
 }
 
-/**
- * 当日の日付フォルダが存在しない場合のみ作成する
- * @param {string} dateFormat - 現在の設定された日付フォーマット
- */
-function createTodayFolderIfNotExists(dateFormat) {
-    const formatInfo = getFormatInfo(dateFormat, new Date());
-    const today = formatInfo.todayStr;
-    
-    chrome.bookmarks.search({ title: today }, (folders) => {
-        if (chrome.runtime.lastError) {
-            console.error("フォルダ検索中にエラーが発生しました:", chrome.runtime.lastError.message);
-            return;
-        }
-        if (folders.length === 0) {
-            chrome.bookmarks.create({ title: today }, () => {
-                if (chrome.runtime.lastError) {
-                    console.error("当日フォルダの作成に失敗しました:", chrome.runtime.lastError.message);
-                }
-            });
-        }
-    });
-}
