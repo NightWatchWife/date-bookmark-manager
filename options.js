@@ -2,20 +2,24 @@ document.addEventListener('DOMContentLoaded', () => {
     // 既存の設定を読み込んでフォームに反映
     chrome.storage.local.get({
         contextMenuLanguage: 'ja',
-        dateFormat: 'yyyy-MM-dd'
+        dateFormat: 'yyyy-MM-dd',
+        alwaysGroupCurrentMonth: false
     }, (items) => {
         document.getElementById('language').value = items.contextMenuLanguage;
         document.getElementById('dateFormat').value = items.dateFormat;
+        document.getElementById('alwaysGroupCurrentMonth').checked = items.alwaysGroupCurrentMonth;
     });
 
     // 保存ボタンのクリックイベント
     document.getElementById('saveButton').addEventListener('click', () => {
         const language = document.getElementById('language').value;
         const dateFormat = document.getElementById('dateFormat').value;
+        const alwaysGroupCurrentMonth = document.getElementById('alwaysGroupCurrentMonth').checked;
 
         chrome.storage.local.set({
             contextMenuLanguage: language,
-            dateFormat: dateFormat
+            dateFormat: dateFormat,
+            alwaysGroupCurrentMonth: alwaysGroupCurrentMonth
         }, () => {
             // 保存成功のメッセージを表示
             const status = document.getElementById('status');

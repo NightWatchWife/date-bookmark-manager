@@ -1,7 +1,7 @@
 {
     "manifest_version": 3,
     "name": "Date Bookmark Manager",
-    "version": "1.2.1",
+    "version": "1.2.2",
     "description": "ブックマークを自動で日付ごとに整理するChrome拡張機能。",
     "permissions": [
         "bookmarks",

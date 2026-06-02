@@ -18,6 +18,20 @@
         .form-group {
             margin-bottom: 15px;
         }
+        .checkbox-group {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 20px;
+        }
+        .checkbox-group input {
+            margin-top: 4px;
+            margin-right: 8px;
+            cursor: pointer;
+        }
+        .checkbox-group label {
+            cursor: pointer;
+            font-weight: normal;
+        }
         label {
             display: block;
             margin-bottom: 5px;
@@ -75,6 +89,16 @@
             <option value="MM-DD">MM-DD (例: 03-01)</option>
             <option value="MM/DD">MM/DD (例: 03/01)</option>
         </select>
+    </div>
+
+    <div class="form-group checkbox-group">
+        <input type="checkbox" id="alwaysGroupCurrentMonth">
+        <label for="alwaysGroupCurrentMonth">
+            当月分も月別フォルダにまとめる (先に常にまとめる)<br>
+            <span style="font-size: 12px; color: #666;">
+                Always group current month's folders first
+            </span>
+        </label>
     </div>
 
     <button id="saveButton">保存 (Save)</button>

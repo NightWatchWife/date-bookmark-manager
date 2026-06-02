@@ -74,7 +74,8 @@ function getFormatInfo(format, date) {
 chrome.runtime.onInstalled.addListener(() => {
     chrome.storage.local.get({
         contextMenuLanguage: 'ja',
-        dateFormat: 'yyyy-MM-dd'
+        dateFormat: 'yyyy-MM-dd',
+        alwaysGroupCurrentMonth: false
     }, (items) => {
         chrome.contextMenus.create({
             id: CONTEXT_MENU_ID,
@@ -85,7 +86,7 @@ chrome.runtime.onInstalled.addListener(() => {
         // インストール時に過去のフォルダ整理のみ実行する。
         // 当日のフォルダはユーザーが実際にブックマークを保存したタイミングで作るため、
         // ここで空のフォルダを先行作成しない。
-        organizePreviousMonthFoldersWithCheck(items.dateFormat);
+        organizePreviousMonthFoldersWithCheck(items.dateFormat, items.alwaysGroupCurrentMonth);
     });
 });
 
@@ -104,21 +105,47 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
  * コンテキストメニュー（右クリック）クリック時のイベントリスナー
  */
 chrome.contextMenus.onClicked.addListener((info, tab) => {
-    chrome.storage.local.get({ dateFormat: 'yyyy-MM-dd' }, (items) => {
+    chrome.storage.local.get({
+        dateFormat: 'yyyy-MM-dd',
+        alwaysGroupCurrentMonth: false
+    }, (items) => {
         const formatInfo = getFormatInfo(items.dateFormat, new Date());
         const today = formatInfo.todayStr;
 
         // 整理を実行してからブックマークを追加（一貫性保持のため）
-        organizePreviousMonthFoldersWithCheck(items.dateFormat, () => {
+        organizePreviousMonthFoldersWithCheck(items.dateFormat, items.alwaysGroupCurrentMonth, () => {
             chrome.bookmarks.search({ title: today }, (folders) => {
-                if (folders.length === 0) {
-                    // 当日のフォルダがない場合は新規作成
-                    chrome.bookmarks.create({ title: today }, (newFolder) => {
-                        saveBookmark(info, tab, newFolder.id);
-                    });
-                } else {
+                const exactTodayFolder = folders.find(f => f.title === today && !f.url);
+                if (exactTodayFolder) {
                     // 既存の当日フォルダを使用
-                    saveBookmark(info, tab, folders[0].id);
+                    saveBookmark(info, tab, exactTodayFolder.id);
+                } else {
+                    // 当日フォルダがない場合
+                    if (items.alwaysGroupCurrentMonth) {
+                        const monthFolderName = formatInfo.monthStr;
+                        // 月フォルダを検索
+                        chrome.bookmarks.search({ title: monthFolderName }, (monthFolders) => {
+                            const exactMonthFolder = monthFolders.find(f => f.title === monthFolderName && !f.url);
+                            if (exactMonthFolder) {
+                                // 月フォルダの中に当日フォルダを作成
+                                chrome.bookmarks.create({ title: today, parentId: exactMonthFolder.id }, (newFolder) => {
+                                    saveBookmark(info, tab, newFolder.id);
+                                });
+                            } else {
+                                // 月フォルダがない場合、新規作成してから当日フォルダを作成
+                                chrome.bookmarks.create({ title: monthFolderName }, (newMonthFolder) => {
+                                    chrome.bookmarks.create({ title: today, parentId: newMonthFolder.id }, (newFolder) => {
+                                        saveBookmark(info, tab, newFolder.id);
+                                    });
+                                });
+                            }
+                        });
+                    } else {
+                        // オプション無効時はルートに直接作成
+                        chrome.bookmarks.create({ title: today }, (newFolder) => {
+                            saveBookmark(info, tab, newFolder.id);
+                        });
+                    }
                 }
             });
         });
@@ -163,7 +190,7 @@ function getPreviousMonthDate(date) {
  * @param {string} dateFormat - 現在の設定された日付フォーマット
  * @param {Function} callback - 処理完了後に実行されるコールバック
  */
-function organizePreviousMonthFoldersWithCheck(dateFormat, callback) {
+function organizePreviousMonthFoldersWithCheck(dateFormat, alwaysGroupCurrentMonth, callback) {
     const formatInfo = getFormatInfo(dateFormat, new Date());
     const todayStr = formatInfo.todayStr;
 
@@ -175,7 +202,7 @@ function organizePreviousMonthFoldersWithCheck(dateFormat, callback) {
             return;
         }
         if (result.lastOrganizeDate !== todayStr) {
-            organizePreviousMonthFolders(dateFormat, () => {
+            organizePreviousMonthFolders(dateFormat, alwaysGroupCurrentMonth, () => {
                 chrome.storage.local.set({ lastOrganizeDate: todayStr }, () => {
                     if (chrome.runtime.lastError) {
                         console.error("ストレージへの保存に失敗しました:", chrome.runtime.lastError.message);
@@ -194,7 +221,7 @@ function organizePreviousMonthFoldersWithCheck(dateFormat, callback) {
  * @param {string} dateFormat - 現在の設定された日付フォーマット
  * @param {Function} callback - 処理完了後に実行されるコールバック
  */
-function organizePreviousMonthFolders(dateFormat, callback) {
+function organizePreviousMonthFolders(dateFormat, alwaysGroupCurrentMonth, callback) {
     const today = new Date();
 
     // 整理対象：前月
@@ -205,6 +232,12 @@ function organizePreviousMonthFolders(dateFormat, callback) {
     const prev2 = getPreviousMonthDate(prev1);
     const formatPrev2 = getFormatInfo(dateFormat, prev2);
 
+    const targets = [formatPrev1, formatPrev2];
+    if (alwaysGroupCurrentMonth) {
+        const formatToday = getFormatInfo(dateFormat, today);
+        targets.push(formatToday);
+    }
+
     chrome.bookmarks.getTree((bookmarkTreeNodes) => {
         if (chrome.runtime.lastError) {
             console.error("ブックマークツリーの取得に失敗しました:", chrome.runtime.lastError.message);
@@ -212,7 +245,7 @@ function organizePreviousMonthFolders(dateFormat, callback) {
             return;
         }
         let completedTasks = 0;
-        const totalTasks = 2;
+        const totalTasks = targets.length;
 
         const checkCompletion = () => {
             completedTasks++;
@@ -222,7 +255,7 @@ function organizePreviousMonthFolders(dateFormat, callback) {
         };
 
         // 各対象月のフォルダを検索・整理
-        [formatPrev1, formatPrev2].forEach(formatData => {
+        targets.forEach(formatData => {
             searchAndOrganizeFolders(bookmarkTreeNodes[0], formatData.monthPattern, formatData.monthStr, null, checkCompletion, true);
         });
     });
