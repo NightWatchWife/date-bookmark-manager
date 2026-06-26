@@ -1,0 +1,30 @@
+【Automate your bookmark organization.】
+
+Have links you saved for "read later" gotten lost in the clutter? Date Bookmark Manager is a simple yet powerful Chrome extension that automatically organizes your bookmarks by the date they were saved, boosting your productivity and information management.
+
+■ Recommended for those who:
+・Have a bookmark bar overflowing with unorganized links
+・Want to review their research or saved pages grouped by date
+・Find manual folder organization too tedious to maintain
+
+■ Key Features
+・Daily Saving: Simply right-click and select "Bookmark to Date Folder". The link will be instantly filed into today's folder.
+・Monthly Auto-Archiving: When the month changes, the previous month's daily folders are automatically bundled into a "YYYY-MM" monthly folder. This keeps your bookmark bar perfectly clean and tidy.
+・Customizable Settings: Access the extension's "Options" page to tailor it exactly to your workflow.
+  - Custom Date Formats: Choose from 6 different date styles (e.g., yyyy-MM-dd, yyyyMMdd, MMDD) to suit your preference.
+  - Multi-language Support: Easily change the context menu language (Japanese / English / 简体中文 / 한국어) directly from the settings.
+  - Group Current Month Instantly (New): Choose to always create and organize daily folders directly inside the current month's folder, rather than waiting for the month to change.
+
+■ How to Use
+1. Right-click on any page or link you want to save.
+2. Select "Bookmark to Date Folder".
+
+That's it! Your bookmarks will be beautifully organized along a clear timeline! For advanced customization, simply right-click the extension icon in your browser and select "Options".
+
+■ Changelog
+・v1.2.2 - Added the "Always group current month's folders first" option. When enabled, bookmarks are saved in daily folders directly created inside the current month's folder (e.g., 2026-06), keeping your bookmark bar organized immediately.
+・v1.2.1 - Fixed a bug where empty date folders were created when the extension or Chrome itself was updated, even if the user had not saved any bookmarks. Date folders are now created only when you actually save a bookmark.
+・v1.2.0 - Added the Options page. You can now customize the date format (6 styles) and context menu language (Japanese / English / 简体中文 / 한국어).
+・v1.0.0 - Initial release with daily saving and monthly auto-archiving.
+
+https://github.com/NightWatchWife/date-bookmark-manager

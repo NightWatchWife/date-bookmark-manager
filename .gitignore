@@ -17,6 +17,9 @@ node_modules/
 *.pem
 *.zip
 
+# Secrets (拡張機能には実行時envが無いため、秘密値は config.js に分離し importScripts で読む)
+config.js
+
 # Environment variables
 .env
 .env.local

@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="utf-8">
+    <style>
+        :root {
+            --paper: #E7EAE1;
+            --paper-card: #F4F6EF;
+            --ink: #18211F;
+            --ink-2: #586460;
+            --line: #CBD2C7;
+            --grid: rgba(28, 107, 82, 0.06);
+            --stamp: #1C6B52;
+            --stamp-deep: #134E3B;
+            --stamp-tint: #DDE9E1;
+            --mono: ui-monospace, "Cascadia Code", "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+            --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+        * { box-sizing: border-box; }
+        body {
+            width: 264px;
+            margin: 0;
+            padding: 16px;
+            color: var(--ink);
+            font-family: var(--sans);
+            background-color: var(--paper);
+            background-image:
+                linear-gradient(var(--grid) 1px, transparent 1px),
+                linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+            background-size: 22px 22px;
+        }
+        .eyebrow {
+            font-family: var(--mono);
+            font-size: 10.5px;
+            letter-spacing: 0.13em;
+            text-transform: uppercase;
+            color: var(--ink-2);
+            margin: 0 0 10px;
+        }
+        .today {
+            display: flex;
+            align-items: baseline;
+            gap: 8px;
+            background: var(--paper-card);
+            border: 1px solid var(--line);
+            border-left: 3px solid var(--stamp);
+            border-radius: 0 8px 8px 0;
+            padding: 8px 12px;
+            margin-bottom: 14px;
+        }
+        .today .lbl { font-size: 11px; color: var(--ink-2); }
+        .today .date { font-family: var(--mono); font-weight: 700; font-size: 17px; color: var(--stamp); letter-spacing: 0.01em; margin-left: auto; }
+
+        #saveButton {
+            font-family: var(--sans);
+            background: var(--stamp);
+            color: var(--paper-card);
+            border: none;
+            padding: 12px 14px;
+            border-radius: 9px;
+            cursor: pointer;
+            font-size: 13.5px;
+            font-weight: 700;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        #saveButton:hover { background: var(--stamp-deep); }
+        #saveButton:disabled { opacity: 0.6; cursor: default; }
+
+        #status {
+            margin-top: 10px;
+            font-size: 13px;
+            text-align: center;
+            min-height: 18px;
+            color: var(--stamp-deep);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+        }
+
+        .hint {
+            margin-top: 12px;
+            font-size: 12px;
+            color: var(--ink-2);
+            line-height: 1.55;
+        }
+        .hint code { font-family: var(--mono); background: var(--stamp-tint); color: var(--stamp-deep); padding: 0 5px; border-radius: 3px; }
+
+        .footer {
+            margin-top: 14px;
+            padding-top: 12px;
+            border-top: 1px solid var(--line);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 12px;
+        }
+        .footer a {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            color: var(--ink-2);
+            text-decoration: none;
+        }
+        .footer a:hover { color: var(--stamp); }
+        #donateLink { color: var(--stamp); font-weight: 700; }
+
+        .mi { width: 1.2em; height: 1.2em; vertical-align: -0.2em; fill: currentColor; flex-shrink: 0; }
+        #status .mi { width: 1.05em; height: 1.05em; }
+
+        a:focus-visible, button:focus-visible {
+            outline: 3px solid var(--stamp-tint);
+            outline-offset: 2px;
+        }
+    </style>
+</head>
+<body>
+    <p class="eyebrow">Date Bookmark Manager</p>
+
+    <div class="today">
+        <span class="lbl">今日のフォルダ</span>
+        <span class="date" id="popupDate">2026-06-26</span>
+    </div>
+
+    <button id="saveButton">
+        <svg class="mi" viewBox="0 0 24 24"><path d="M21 7h-2v2h-2V7h-2V5h2V3h2v2h2v2zm-2 14-7-3-7 3V5c0-1.1.9-2 2-2h7a5.002 5.002 0 0 0 5 7.9V21z"/></svg>
+        <span>このページを保存</span>
+    </button>
+    <div id="status"></div>
+
+    <p class="hint">
+        ページやリンク上で<strong>右クリック</strong>しても保存できます。保存先は <code>ブックマークバー</code> 内の日付フォルダです。
+    </p>
+
+    <div class="footer">
+        <a id="optionsLink" href="#"><svg class="mi" viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.488.488 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg> 設定</a>
+        <a id="donateLink" href="https://buymeacoffee.com/nightwatchwife" target="_blank" rel="noopener noreferrer"><svg class="mi" viewBox="0 0 24 24"><path d="M20 3H4v10c0 2.21 1.79 4 4 4h6c2.21 0 4-1.79 4-4v-3h2a2 2 0 0 0 2-2V5c0-1.11-.89-2-2-2zm0 5h-2V5h2v3zM4 19h16v2H4z"/></svg> 応援</a>
+    </div>
+
+    <script src="popup.js"></script>
+</body>
+</html>

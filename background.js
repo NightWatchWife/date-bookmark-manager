@@ -6,6 +6,64 @@
 
 const CONTEXT_MENU_ID = "bookmarkToDateFolder";
 
+// ===== GA4 Measurement Protocol (匿名の利用統計) =====
+// 計測IDは「Extension runtime」ストリームのもの。
+// GA_API_SECRET は GA4管理画面で発行した値に差し替えてください（未設定時は送信をスキップ）。
+const GA_MEASUREMENT_ID = 'G-9CSJ3Y9XEB';
+// API secret は config.js（.gitignore 対象）から読み込む。
+// config.js が無い／未設定の場合は計測を自動で無効化する。
+self.GA_API_SECRET = '';
+try {
+    importScripts('config.js');
+} catch (e) {
+    console.warn('config.js が見つかりません。利用統計の送信は無効です。');
+}
+const GA_API_SECRET = self.GA_API_SECRET;
+const GA_ENDPOINT = `https://www.google-analytics.com/mp/collect?measurement_id=${GA_MEASUREMENT_ID}&api_secret=${GA_API_SECRET}`;
+
+/**
+ * インストールごとに一意な匿名ID（個人情報ではない）を取得・生成する
+ */
+async function getClientId() {
+    const { gaClientId } = await chrome.storage.local.get('gaClientId');
+    if (gaClientId) return gaClientId;
+    const id = crypto.randomUUID();
+    await chrome.storage.local.set({ gaClientId: id });
+    return id;
+}
+
+/**
+ * GA4 にイベントを1件送信する（発生時に即時POST。バッチしないこと）
+ * @param {string} name - イベント名
+ * @param {Object} params - イベントパラメータ
+ */
+async function gaEvent(name, params = {}) {
+    // API secret 未設定時は何もしない（誤送信防止）
+    if (!GA_API_SECRET) return;
+    // ユーザーがオプトアウトしている場合は送信しない
+    const { analyticsEnabled = true } = await chrome.storage.local.get({ analyticsEnabled: true });
+    if (!analyticsEnabled) return;
+    try {
+        const client_id = await getClientId();
+        await fetch(GA_ENDPOINT, {
+            method: 'POST',
+            body: JSON.stringify({
+                client_id,
+                events: [{
+                    name,
+                    params: {
+                        ...params,
+                        engagement_time_msec: 100,
+                        session_id: Date.now().toString()
+                    }
+                }]
+            })
+        });
+    } catch (e) {
+        console.error('GA event failed:', e);
+    }
+}
+
 /**
  * 設定言語に基づく右クリックメニューのタイトル取得
  */
@@ -71,7 +129,17 @@ function getFormatInfo(format, date) {
 /**
  * 拡張機能のインストール・更新時に実行される初期設定
  */
-chrome.runtime.onInstalled.addListener(() => {
+chrome.runtime.onInstalled.addListener((details) => {
+    // 新規インストール／更新を計測
+    gaEvent(details.reason === 'install' ? 'extension_installed' : 'extension_updated', {
+        version: chrome.runtime.getManifest().version
+    });
+
+    // 新規インストール時は使い方ページを開く（定着率向上のためのオンボーディング）
+    if (details.reason === 'install') {
+        chrome.tabs.create({ url: 'welcome.html' });
+    }
+
     chrome.storage.local.get({
         contextMenuLanguage: 'ja',
         dateFormat: 'yyyy-MM-dd',
@@ -98,6 +166,15 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         chrome.contextMenus.update(CONTEXT_MENU_ID, {
             title: getContextMenuTitle(request.language)
         });
+    } else if (request.action === 'trackEvent') {
+        // options.js やドネイトリンクなど、他コンテキストからのイベント計測を仲介
+        gaEvent(request.name, request.params || {});
+    } else if (request.action === 'savePageToToday') {
+        // popup からの「このページを保存」要求を処理
+        bookmarkToTodayFolder(request.url, request.title || '新しいブックマーク', 'popup', (result) => {
+            sendResponse(result);
+        });
+        return true; // 非同期で sendResponse するため
     }
 });
 
@@ -105,6 +182,20 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
  * コンテキストメニュー（右クリック）クリック時のイベントリスナー
  */
 chrome.contextMenus.onClicked.addListener((info, tab) => {
+    const url = info.linkUrl || info.pageUrl;
+    const title = tab.title || "新しいブックマーク";
+    bookmarkToTodayFolder(url, title, 'context_menu');
+});
+
+/**
+ * 当日の日付フォルダを解決（必要なら作成）し、ブックマークを保存する共通処理。
+ * 右クリックメニューと popup の両方から利用する。
+ * @param {string} url - 保存するURL
+ * @param {string} title - ブックマークのタイトル
+ * @param {string} source - 流入元（'context_menu' / 'popup'）計測用
+ * @param {Function} [done] - 完了コールバック（{ ok, error } を受け取る）
+ */
+function bookmarkToTodayFolder(url, title, source, done) {
     chrome.storage.local.get({
         dateFormat: 'yyyy-MM-dd',
         alwaysGroupCurrentMonth: false
@@ -118,7 +209,7 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
                 const exactTodayFolder = folders.find(f => f.title === today && !f.url);
                 if (exactTodayFolder) {
                     // 既存の当日フォルダを使用
-                    saveBookmark(info, tab, exactTodayFolder.id);
+                    saveBookmark(url, title, exactTodayFolder.id, source, done);
                 } else {
                     // 当日フォルダがない場合
                     if (items.alwaysGroupCurrentMonth) {
@@ -129,13 +220,13 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
                             if (exactMonthFolder) {
                                 // 月フォルダの中に当日フォルダを作成
                                 chrome.bookmarks.create({ title: today, parentId: exactMonthFolder.id }, (newFolder) => {
-                                    saveBookmark(info, tab, newFolder.id);
+                                    saveBookmark(url, title, newFolder.id, source, done);
                                 });
                             } else {
                                 // 月フォルダがない場合、新規作成してから当日フォルダを作成
                                 chrome.bookmarks.create({ title: monthFolderName }, (newMonthFolder) => {
                                     chrome.bookmarks.create({ title: today, parentId: newMonthFolder.id }, (newFolder) => {
-                                        saveBookmark(info, tab, newFolder.id);
+                                        saveBookmark(url, title, newFolder.id, source, done);
                                     });
                                 });
                             }
@@ -143,33 +234,37 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
                     } else {
                         // オプション無効時はルートに直接作成
                         chrome.bookmarks.create({ title: today }, (newFolder) => {
-                            saveBookmark(info, tab, newFolder.id);
+                            saveBookmark(url, title, newFolder.id, source, done);
                         });
                     }
                 }
             });
         });
     });
-});
+}
 
 /**
  * 指定されたフォルダにブックマークを保存する
- * @param {Object} info - contextMenus.onClicked の info オブジェクト
- * @param {Object} tab - contextMenus.onClicked の tab オブジェクト
+ * @param {string} url - 保存するURL
+ * @param {string} title - ブックマークのタイトル
  * @param {string} folderId - 保存先フォルダのID
+ * @param {string} source - 流入元（計測用）
+ * @param {Function} [done] - 完了コールバック（{ ok, error } を受け取る）
  */
-function saveBookmark(info, tab, folderId) {
-    const url = info.linkUrl || info.pageUrl;
-    const title = tab.title || "新しいブックマーク";
-
+function saveBookmark(url, title, folderId, source, done) {
     chrome.bookmarks.create({
         parentId: folderId,
-        title: title,
+        title: title || "新しいブックマーク",
         url: url
     }, () => {
         if (chrome.runtime.lastError) {
             console.error(chrome.runtime.lastError);
+            if (done) done({ ok: false, error: chrome.runtime.lastError.message });
+            return;
         }
+        // コア機能の実利用を計測（最重要指標）
+        gaEvent('bookmark_saved', source ? { source } : {});
+        if (done) done({ ok: true });
     });
 }
 

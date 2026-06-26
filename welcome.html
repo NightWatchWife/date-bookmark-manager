@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="utf-8">
+    <title>ようこそ - Date Bookmark Manager</title>
+    <style>
+        :root {
+            --paper: #E7EAE1;
+            --paper-card: #F4F6EF;
+            --ink: #18211F;
+            --ink-2: #586460;
+            --line: #CBD2C7;
+            --grid: rgba(28, 107, 82, 0.06);
+            --stamp: #1C6B52;
+            --stamp-deep: #134E3B;
+            --stamp-tint: #DDE9E1;
+            --mono: ui-monospace, "Cascadia Code", "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+            --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            color: var(--ink);
+            font-family: var(--sans);
+            line-height: 1.65;
+            background-color: var(--paper);
+            background-image:
+                linear-gradient(var(--grid) 1px, transparent 1px),
+                linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+            background-size: 22px 22px;
+        }
+        .wrap { max-width: 600px; margin: 0 auto; padding: 56px 24px 72px; }
+
+        .eyebrow {
+            font-family: var(--mono);
+            font-size: 12px;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: var(--stamp);
+            margin: 0;
+        }
+
+        .hero { text-align: center; margin-bottom: 48px; }
+        .hero .eyebrow { margin-bottom: 16px; }
+        .stamp {
+            display: inline-block;
+            font-family: var(--mono);
+            background: var(--paper-card);
+            border: 2.5px solid var(--stamp);
+            border-radius: 10px;
+            color: var(--stamp);
+            padding: 14px 26px 16px;
+            transform: rotate(-1.6deg);
+            box-shadow: 0 0 0 4px var(--paper), 0 0 0 5px rgba(28, 107, 82, 0.18);
+            animation: stampIn 0.42s cubic-bezier(0.2, 0.8, 0.3, 1.2) both;
+        }
+        .stamp .d { font-size: clamp(36px, 8vw, 54px); font-weight: 700; letter-spacing: 0.01em; line-height: 1.05; }
+        .stamp .d-label { font-size: 11px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--ink-2); }
+        @keyframes stampIn {
+            0% { opacity: 0; transform: rotate(-1.6deg) scale(1.18); }
+            55% { opacity: 1; }
+            100% { transform: rotate(-1.6deg) scale(1); }
+        }
+        h1 { font-size: 25px; font-weight: 800; letter-spacing: -0.01em; margin: 28px 0 6px; }
+        .lede { color: var(--ink-2); font-size: 15px; margin: 0; }
+        .lede .iso { font-family: var(--mono); color: var(--ink); background: var(--stamp-tint); padding: 1px 6px; border-radius: 4px; }
+
+        .card {
+            position: relative;
+            background: var(--paper-card);
+            border: 1px solid var(--line);
+            border-radius: 0 12px 12px 12px;
+            padding: 26px 24px 22px;
+            margin-bottom: 22px;
+        }
+        .tab {
+            position: absolute;
+            top: 0;
+            left: -1px;
+            transform: translateY(-100%);
+            background: var(--stamp);
+            color: var(--paper-card);
+            font-family: var(--mono);
+            font-size: 11px;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            padding: 5px 13px;
+            border-radius: 9px 9px 0 0;
+        }
+
+        .step { display: flex; gap: 16px; align-items: flex-start; }
+        .step + .step { margin-top: 20px; padding-top: 20px; border-top: 1px dashed var(--line); }
+        .idx {
+            flex: 0 0 auto;
+            font-family: var(--mono);
+            font-weight: 700;
+            font-size: 15px;
+            color: var(--stamp);
+            background: var(--stamp-tint);
+            border-radius: 7px;
+            padding: 6px 10px;
+            line-height: 1;
+        }
+        .step-body { font-size: 14.5px; }
+        .step-body strong { font-weight: 700; }
+        .step-body .note { display: block; color: var(--ink-2); font-size: 13px; margin-top: 4px; }
+        .step-body .en { display: block; color: var(--ink-2); font-family: var(--mono); font-size: 11.5px; margin-top: 5px; letter-spacing: 0.01em; }
+        code { font-family: var(--mono); background: var(--stamp-tint); color: var(--stamp-deep); padding: 1px 6px; border-radius: 4px; font-size: 13px; }
+
+        .shortcut { display: flex; gap: 12px; align-items: center; font-size: 14px; }
+        .shortcut .mi-lg { width: 26px; height: 26px; fill: var(--stamp); flex-shrink: 0; }
+        .shortcut .en { color: var(--ink-2); font-family: var(--mono); font-size: 11.5px; }
+
+        .cta { text-align: center; margin: 36px 0 0; }
+        .btn {
+            font-family: var(--sans);
+            display: inline-flex;
+            align-items: center;
+            gap: 9px;
+            background: var(--stamp);
+            color: var(--paper-card);
+            border: none;
+            border-radius: 9px;
+            padding: 13px 26px;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .btn:hover { background: var(--stamp-deep); }
+
+        .donate { text-align: center; margin-top: 40px; color: var(--ink-2); font-size: 13px; }
+        .donate-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 12px;
+            padding: 9px 18px;
+            border: 1.5px solid var(--stamp);
+            color: var(--stamp);
+            background: var(--paper-card);
+            border-radius: 9px;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 13.5px;
+        }
+        .donate-chip:hover { background: var(--stamp-tint); }
+
+        .mi { width: 1.15em; height: 1.15em; vertical-align: -0.18em; fill: currentColor; flex-shrink: 0; }
+
+        a:focus-visible, button:focus-visible {
+            outline: 3px solid var(--stamp-tint);
+            outline-offset: 2px;
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .stamp { animation: none; }
+        }
+        @media (max-width: 480px) {
+            .wrap { padding: 40px 18px 56px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="wrap">
+        <header class="hero">
+            <p class="eyebrow">今日の保存先 — today's folder</p>
+            <div class="stamp">
+                <div class="d-label">filed under</div>
+                <div class="d" id="stampDate">2026-06-26</div>
+            </div>
+            <h1>ブックマークが、日付ごとに片づく。</h1>
+            <p class="lede">右クリックで保存したページは、<span class="iso" id="ledeDate">2026-06-26</span> のような日付フォルダに自動で集まります。</p>
+        </header>
+
+        <section class="card">
+            <span class="tab">how to</span>
+            <div class="step">
+                <span class="idx">01</span>
+                <div class="step-body">
+                    保存したいページやリンクの上で<strong>右クリック</strong>。
+                    <span class="en">Right-click any page or link.</span>
+                </div>
+            </div>
+            <div class="step">
+                <span class="idx">02</span>
+                <div class="step-body">
+                    メニューの<strong>「日付フォルダにブックマークする」</strong>を選ぶ。
+                    <span class="note">ブックマークバーに当日の日付フォルダ（例: <code>2026-06-26</code>）が作られ、そこに収まります。</span>
+                    <span class="en">Pick "Bookmark to Date Folder".</span>
+                </div>
+            </div>
+        </section>
+
+        <section class="card">
+            <span class="tab">shortcut</span>
+            <div class="shortcut">
+                <svg class="mi-lg" viewBox="0 0 24 24"><path d="M21 7h-2v2h-2V7h-2V5h2V3h2v2h2v2zm-2 14-7-3-7 3V5c0-1.1.9-2 2-2h7a5.002 5.002 0 0 0 5 7.9V21z"/></svg>
+                <div>
+                    ツールバーのアイコンから<strong>「このページを今日のフォルダに保存」</strong>でもワンクリック保存できます。
+                    <span class="en">Pin the toolbar icon for one-click saves.</span>
+                </div>
+            </div>
+        </section>
+
+        <div class="cta">
+            <button id="openOptions" class="btn">
+                <svg class="mi" viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.488.488 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+                日付フォーマット・言語を設定する
+            </button>
+        </div>
+
+        <div class="donate">
+            このツールが役立ったら、開発の継続を応援してもらえると嬉しいです。
+            <br>
+            <a class="donate-chip" id="donateLink" href="https://buymeacoffee.com/nightwatchwife" target="_blank" rel="noopener noreferrer">
+                <svg class="mi" viewBox="0 0 24 24"><path d="M20 3H4v10c0 2.21 1.79 4 4 4h6c2.21 0 4-1.79 4-4v-3h2a2 2 0 0 0 2-2V5c0-1.11-.89-2-2-2zm0 5h-2V5h2v3zM4 19h16v2H4z"/></svg>
+                Buy me a coffee
+            </a>
+        </div>
+    </div>
+
+    <script src="welcome.js"></script>
+</body>
+</html>
