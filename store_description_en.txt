@@ -1,6 +1,6 @@
-【Automate your bookmark organization.】
+【Automatically organize bookmarks by date — fully automatic bookmark manager】
 
-Have links you saved for "read later" gotten lost in the clutter? Date Bookmark Manager is a simple yet powerful Chrome extension that automatically organizes your bookmarks by the date they were saved, boosting your productivity and information management.
+Have links you saved for "read later" gotten lost in the clutter? Date Bookmark Manager is a simple yet powerful Chrome extension that automatically organizes your bookmarks into folders by the date they were saved. It tidies up an overflowing bookmark bar along a clear timeline, boosting your productivity and information management.
 
 ■ Recommended for those who:
 ・Have a bookmark bar overflowing with unorganized links
@@ -8,20 +8,25 @@ Have links you saved for "read later" gotten lost in the clutter? Date Bookmark 
 ・Find manual folder organization too tedious to maintain
 
 ■ Key Features
-・Daily Saving: Simply right-click and select "Bookmark to Date Folder". The link will be instantly filed into today's folder.
-・Monthly Auto-Archiving: When the month changes, the previous month's daily folders are automatically bundled into a "YYYY-MM" monthly folder. This keeps your bookmark bar perfectly clean and tidy.
-・Customizable Settings: Access the extension's "Options" page to tailor it exactly to your workflow.
-  - Custom Date Formats: Choose from 6 different date styles (e.g., yyyy-MM-dd, yyyyMMdd, MMDD) to suit your preference.
-  - Multi-language Support: Easily change the context menu language (Japanese / English / 简体中文 / 한국어) directly from the settings.
-  - Group Current Month Instantly (New): Choose to always create and organize daily folders directly inside the current month's folder, rather than waiting for the month to change.
+・Daily Saving: Simply right-click and select "Bookmark to Date Folder". The link is instantly filed into today's folder (e.g., 2026-06-26).
+・One-Click Saving (New): Click the toolbar icon and use the "Save this page to today's folder" button — no right-click needed.
+・Monthly Auto-Archiving: When the month changes, the previous month's daily folders are automatically bundled into a "YYYY-MM" monthly folder, keeping your bookmark bar clean and tidy.
+・Customizable Settings: Open the extension's "Options" page to tailor it to your workflow.
+  - Custom Date Formats: Choose from 6 styles (e.g., yyyy-MM-dd, yyyyMMdd, MMDD) to suit your preference.
+  - Multi-language Support: Set the context menu language (Japanese / English / 简体中文 / 한국어) directly from the settings.
+  - Group Current Month Instantly: Optionally create and organize daily folders directly inside the current month's folder, without waiting for the month to change.
 
 ■ How to Use
-1. Right-click on any page or link you want to save.
-2. Select "Bookmark to Date Folder".
+1. Right-click any page or link you want to save, then choose "Bookmark to Date Folder".
+2. Or click the toolbar icon and choose "Save this page to today's folder".
 
-That's it! Your bookmarks will be beautifully organized along a clear timeline! For advanced customization, simply right-click the extension icon in your browser and select "Options".
+That's it! Your bookmarks are beautifully organized along a clear timeline. A short usage guide opens on first install. To change the date format or language, right-click the extension icon and open "Options".
+
+■ Privacy
+Your bookmark contents (URLs and titles) are never sent anywhere — everything is processed locally in your browser. To improve quality, only anonymous usage statistics are collected; no personally identifiable information is included, and you can turn it off anytime from the settings.
 
 ■ Changelog
+・v1.3.0 - Added a toolbar popup for one-click saving. A short usage guide now opens on first install. Redesigned the options page and popup. Also added anonymous usage statistics (no personal data, can be turned off) to help improve quality.
 ・v1.2.2 - Added the "Always group current month's folders first" option. When enabled, bookmarks are saved in daily folders directly created inside the current month's folder (e.g., 2026-06), keeping your bookmark bar organized immediately.
 ・v1.2.1 - Fixed a bug where empty date folders were created when the extension or Chrome itself was updated, even if the user had not saved any bookmarks. Date folders are now created only when you actually save a bookmark.
 ・v1.2.0 - Added the Options page. You can now customize the date format (6 styles) and context menu language (Japanese / English / 简体中文 / 한국어).
