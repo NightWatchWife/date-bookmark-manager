@@ -167,7 +167,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             title: getContextMenuTitle(request.language)
         });
     } else if (request.action === 'trackEvent') {
-        // options.js やドネイトリンクなど、他コンテキストからのイベント計測を仲介
+        // options.js / popup.js など、他コンテキストからのイベント計測を仲介
         gaEvent(request.name, request.params || {});
     } else if (request.action === 'savePageToToday') {
         // popup からの「このページを保存」要求を処理
@@ -313,140 +313,98 @@ function organizePreviousMonthFoldersWithCheck(dateFormat, alwaysGroupCurrentMon
 
 /**
  * 過去（前月および前々月）のフォルダをチェックし、月別フォルダにまとめる
+ * 古い月から1か月ずつ順番に処理することで、新しく作る月フォルダが
+ * 親フォルダの一番下に時系列順（古い→新しい）で並ぶようにする。
  * @param {string} dateFormat - 現在の設定された日付フォーマット
- * @param {Function} callback - 処理完了後に実行されるコールバック
+ * @param {boolean} alwaysGroupCurrentMonth - 当月分も整理対象に含めるか
+ * @param {Function} callback - すべての作成・移動が完了した後に実行されるコールバック
  */
 function organizePreviousMonthFolders(dateFormat, alwaysGroupCurrentMonth, callback) {
     const today = new Date();
-
-    // 整理対象：前月
     const prev1 = getPreviousMonthDate(today);
-    const formatPrev1 = getFormatInfo(dateFormat, prev1);
-
-    // 整理対象：前々月（月跨ぎ直後の整理漏れを防止するため）
+    // 前々月も対象にする（月跨ぎ直後の整理漏れを防止するため）
     const prev2 = getPreviousMonthDate(prev1);
-    const formatPrev2 = getFormatInfo(dateFormat, prev2);
 
-    const targets = [formatPrev1, formatPrev2];
+    // 古い月 → 新しい月の順。月フォルダは末尾に追加するため、この順で時系列に並ぶ
+    const targets = [getFormatInfo(dateFormat, prev2), getFormatInfo(dateFormat, prev1)];
     if (alwaysGroupCurrentMonth) {
-        const formatToday = getFormatInfo(dateFormat, today);
-        targets.push(formatToday);
+        targets.push(getFormatInfo(dateFormat, today));
     }
 
-    chrome.bookmarks.getTree((bookmarkTreeNodes) => {
-        if (chrome.runtime.lastError) {
-            console.error("ブックマークツリーの取得に失敗しました:", chrome.runtime.lastError.message);
-            if (callback) callback();
-            return;
-        }
-        let completedTasks = 0;
-        const totalTasks = targets.length;
-
-        const checkCompletion = () => {
-            completedTasks++;
-            if (completedTasks === totalTasks && callback) {
-                callback();
+    (async () => {
+        for (const formatData of targets) {
+            try {
+                // 直前の月の作成・移動でツリーが変わるため、月ごとに最新のツリーを取り直す
+                // （古いスナップショットの index を使うと位置ずれや "Index out of bounds" になる）
+                const [root] = await chrome.bookmarks.getTree();
+                await organizeMonthFolders(root, formatData.monthPattern, formatData.monthStr);
+            } catch (e) {
+                console.error(`${formatData.monthStr} のフォルダ整理に失敗しました:`, e);
             }
-        };
-
-        // 各対象月のフォルダを検索・整理
-        targets.forEach(formatData => {
-            searchAndOrganizeFolders(bookmarkTreeNodes[0], formatData.monthPattern, formatData.monthStr, null, checkCompletion, true);
-        });
+        }
+    })().finally(() => {
+        if (callback) callback();
     });
 }
 
 /**
- * フォルダを再帰的に探索し、日付フォルダを月別フォルダに移動する
+ * 指定月の日付フォルダを親フォルダごとに月フォルダへまとめる
+ * @param {Object} root - ブックマークツリーのルートノード
+ * @param {string} monthPattern - 検索する日付フォルダの接頭辞
+ * @param {string} monthFolderName - 移動先となる月フォルダ名
+ */
+async function organizeMonthFolders(root, monthPattern, monthFolderName) {
+    const groups = [];
+    collectDateFolders(root, monthPattern, monthFolderName, groups);
+
+    for (const { parentId, targetFolders, monthFolderNode } of groups) {
+        let monthFolderId = monthFolderNode ? monthFolderNode.id : null;
+        if (!monthFolderId) {
+            // index を指定せずに作成し、親フォルダの一番下に追加する
+            const newFolder = await chrome.bookmarks.create({ parentId, title: monthFolderName });
+            monthFolderId = newFolder.id;
+        }
+        // 1件ずつ順番に移動し、月フォルダ内でも元の並び（日付順）のまま末尾に追加する
+        for (const folder of targetFolders) {
+            try {
+                await chrome.bookmarks.move(folder.id, { parentId: monthFolderId });
+            } catch (e) {
+                console.error(`フォルダ ${folder.id} の移動に失敗しました:`, e);
+            }
+        }
+    }
+}
+
+/**
+ * ツリーを再帰的に探索し、月フォルダへまとめるべき日付フォルダを親フォルダ単位で収集する
  * @param {Object} node - 探索対象のブックマークノード
  * @param {string} monthPattern - 検索する日付フォルダの接頭辞
  * @param {string} monthFolderName - 移動先となる月フォルダ名
- * @param {Object} parentNode - 現在のノードの親ノード
- * @param {Function} callback - 処理完了後に実行されるコールバック
- * @param {boolean} isRootCall - ルートからの初回呼び出し判定
+ * @param {Array} groups - 収集結果（{ parentId, targetFolders, monthFolderNode }）の格納先
  */
-function searchAndOrganizeFolders(node, monthPattern, monthFolderName, parentNode, callback, isRootCall = false) {
-    if (!node.children) {
-        if (callback && isRootCall) callback();
-        return;
-    }
+function collectDateFolders(node, monthPattern, monthFolderName, groups) {
+    if (!node.children) return;
 
     // すでに月フォルダ内にある場合はスキップして無限ループや過剰な階層化を防ぐ
-    if (node.title === monthFolderName || (parentNode && parentNode.title === monthFolderName)) {
-        if (callback && isRootCall) callback();
-        return;
-    }
+    if (node.title === monthFolderName) return;
 
     const targetFolders = [];
     let monthFolderNode = null;
 
     // 子要素を走査
     for (const child of node.children) {
-        if (!child.url) { // フォルダのみ対象
-            // MMDDなどの場合、monthPatternが2文字(例: "12")になるため、
-            // 余計なマッチを防ぐために正確な文字長での確認などを追加することも可能だが、
-            // 既存仕様に沿って startsWith を用いる（MMDD/MM-DDなどは文字長一致も考慮）
-            if (child.title.startsWith(monthPattern) && child.title !== monthFolderName) {
-                // MMDDのようなフォーマットの場合、"12"と"1201"が区別されるようにする
-                // 前方一致かつタイトルが日付フォーマットに沿っている場合のみ対象
-                targetFolders.push(child);
-            } else if (child.title === monthFolderName) {
-                monthFolderNode = child;
-            }
-            // 再帰的に深層を探索
-            searchAndOrganizeFolders(child, monthPattern, monthFolderName, node, null, false);
+        if (child.url) continue; // フォルダのみ対象
+        if (child.title === monthFolderName) {
+            monthFolderNode = child;
+        } else if (child.title.startsWith(monthPattern)) {
+            targetFolders.push(child);
         }
+        // 再帰的に深層を探索
+        collectDateFolders(child, monthPattern, monthFolderName, groups);
     }
 
-    // 日付フォルダが見つかった場合、月フォルダへ集約
     if (targetFolders.length > 0) {
-        if (!monthFolderNode) {
-            // 月フォルダが存在しない場合は新規作成
-            const insertIndex = targetFolders[0].index;
-            chrome.bookmarks.create({
-                parentId: node.id,
-                title: monthFolderName,
-                index: insertIndex
-            }, (newFolder) => {
-                if (chrome.runtime.lastError) {
-                    console.error("月フォルダの作成に失敗しました:", chrome.runtime.lastError.message);
-                    if (isRootCall && callback) callback();
-                    return;
-                }
-                moveFolders(targetFolders, newFolder.id, isRootCall ? callback : null);
-            });
-        } else {
-            // 既存の月フォルダを使用
-            moveFolders(targetFolders, monthFolderNode.id, isRootCall ? callback : null);
-        }
-    } else if (isRootCall && callback) {
-        callback();
+        groups.push({ parentId: node.id, targetFolders, monthFolderNode });
     }
-}
-
-/**
- * 複数のフォルダを一括で指定先フォルダへ移動する
- * @param {Array} folders - 移動対象のフォルダオブジェクト配列
- * @param {string} targetParentId - 移動先の親フォルダID
- * @param {Function} callback - すべての移動完了後に実行されるコールバック
- */
-function moveFolders(folders, targetParentId, callback) {
-    if (folders.length === 0) {
-        if (callback) callback();
-        return;
-    }
-
-    let movedCount = 0;
-    folders.forEach(folder => {
-        chrome.bookmarks.move(folder.id, { parentId: targetParentId }, () => {
-            if (chrome.runtime.lastError) {
-                console.error(`フォルダ ${folder.id} の移動に失敗しました:`, chrome.runtime.lastError.message);
-            }
-            movedCount++;
-            if (movedCount === folders.length && callback) {
-                callback();
-            }
-        });
-    });
 }
 

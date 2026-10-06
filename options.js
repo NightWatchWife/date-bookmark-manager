@@ -24,11 +24,6 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('analyticsEnabled').checked = items.analyticsEnabled;
     });
 
-    // ドネイトリンクのクリックを計測
-    document.getElementById('donateLink').addEventListener('click', () => {
-        trackEvent('donate_clicked');
-    });
-
     // 保存ボタンのクリックイベント
     document.getElementById('saveButton').addEventListener('click', () => {
         const language = document.getElementById('language').value;

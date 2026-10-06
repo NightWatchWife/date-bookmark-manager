@@ -1,12 +1,3 @@
-// background.js 経由で GA4 にイベントを送る簡易ヘルパー
-function trackEvent(name, params = {}) {
-    try {
-        chrome.runtime.sendMessage({ action: 'trackEvent', name, params });
-    } catch (e) {
-        // 送信失敗は無視
-    }
-}
-
 document.addEventListener('DOMContentLoaded', () => {
     const saveButton = document.getElementById('saveButton');
     const status = document.getElementById('status');
@@ -53,10 +44,5 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('optionsLink').addEventListener('click', (e) => {
         e.preventDefault();
         chrome.runtime.openOptionsPage();
-    });
-
-    // ドネイトリンクのクリックを計測
-    document.getElementById('donateLink').addEventListener('click', () => {
-        trackEvent('donate_clicked', { source: 'popup' });
     });
 });

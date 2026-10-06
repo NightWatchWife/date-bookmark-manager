@@ -26,6 +26,7 @@ That's it! Your bookmarks are beautifully organized along a clear timeline. A sh
 Your bookmark contents (URLs and titles) are never sent anywhere — everything is processed locally in your browser. To improve quality, only anonymous usage statistics are collected; no personally identifiable information is included, and you can turn it off anytime from the settings.
 
 ■ Changelog
+・v1.3.1 - Monthly folders created when the month changes (e.g., 2026-09) are now placed at the bottom, in chronological order even when several months are archived at once. Also fixed a bug where monthly folders could be created in the wrong position or archiving could fail.
 ・v1.3.0 - Added a toolbar popup for one-click saving. A short usage guide now opens on first install. Redesigned the options page and popup. Also added anonymous usage statistics (no personal data, can be turned off) to help improve quality.
 ・v1.2.2 - Added the "Always group current month's folders first" option. When enabled, bookmarks are saved in daily folders directly created inside the current month's folder (e.g., 2026-06), keeping your bookmark bar organized immediately.
 ・v1.2.1 - Fixed a bug where empty date folders were created when the extension or Chrome itself was updated, even if the user had not saved any bookmarks. Date folders are now created only when you actually save a bookmark.

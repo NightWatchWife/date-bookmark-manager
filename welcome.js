@@ -22,8 +22,4 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('openOptions').addEventListener('click', () => {
         chrome.runtime.openOptionsPage();
     });
-
-    document.getElementById('donateLink').addEventListener('click', () => {
-        trackEvent('donate_clicked', { source: 'welcome' });
-    });
 });
