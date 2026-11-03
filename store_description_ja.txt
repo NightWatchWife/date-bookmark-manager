@@ -33,4 +33,7 @@
 ・v1.2.0 - オプション画面を追加。日付フォーマット（6種類）と右クリックメニューの表示言語（日本語 / English / 简体中文 / 한국어）を変更できるようになりました。
 ・v1.0.0 - 初回リリース。日付別保存と月別自動アーカイブ機能を提供。
 
-https://github.com/NightWatchWife/date-bookmark-manager
+■ 開発者
+ありがっさまりょうた（個人開発者）
+プロフィールとほかの運営サイト：https://arigassama.com/about
+ソースコード：https://github.com/NightWatchWife/date-bookmark-manager
