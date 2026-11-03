@@ -33,4 +33,7 @@ Your bookmark contents (URLs and titles) are never sent anywhere — everything 
 ・v1.2.0 - Added the Options page. You can now customize the date format (6 styles) and context menu language (Japanese / English / 简体中文 / 한국어).
 ・v1.0.0 - Initial release with daily saving and monthly auto-archiving.
 
-https://github.com/NightWatchWife/date-bookmark-manager
+■ Developer
+Arigassama Ryota (solo developer)
+Profile and other projects: https://arigassama.com/about
+Source code: https://github.com/NightWatchWife/date-bookmark-manager
